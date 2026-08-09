@@ -9,6 +9,18 @@ resource "azurerm_linux_virtual_machine" "rgtcsvm" {
   disable_password_authentication = false
   tags                            = local.tags
 
+  custom_data = base64encode(<<-EOF
+    #!/bin/bash
+    sudo apt-get update -y
+    sudo apt-get install -y nginx git
+    sudo rm -rf /var/www/html/*
+    git clone https://github.com/devopsinsiders/StreamFlix.git /tmp/StreamFlix
+    sudo cp -r /tmp/StreamFlix/* /var/www/html/
+    sudo systemctl enable nginx
+    sudo systemctl restart nginx
+  EOF
+  )
+
   network_interface_ids = [
     data.azurerm_network_interface.rg_nic[each.key].id,
   ]

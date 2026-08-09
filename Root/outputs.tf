@@ -23,6 +23,16 @@ output "network_interface_ids" {
   value       = module.rg_nic.network_interface_ids
 }
 
+output "public_ip_addresses" {
+  description = "Public IP addresses assigned to virtual machines"
+  value       = module.rg_nic.public_ip_addresses
+}
+
+output "streamflix_web_urls" {
+  description = "StreamFlix Web Application URLs"
+  value       = { for k, v in module.rg_nic.public_ip_addresses : k => "http://${v}" }
+}
+
 output "virtual_machine_ids" {
   description = "Output summary of VM IDs"
   value       = module.rgtcsvm.virtual_machine_ids
