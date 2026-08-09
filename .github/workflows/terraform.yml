@@ -1,4 +1,4 @@
-name: "Production Terraform CI/CD Pipeline"
+name: "Production Terraform Security & CI/CD Pipeline"
 
 on:
   push:
@@ -12,10 +12,38 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  security-events: write
 
 jobs:
+  security-and-lint:
+    name: "TFLint & Checkov Security Scan"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: "v0.50.0"
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint -f compact --recursive
+
+      - name: Checkov IaC Security Scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform
+          output_format: cli
+          soft_fail: true
+
   terraform:
-    name: "Terraform CI/CD"
+    name: "Terraform Deploy"
+    needs: security-and-lint
     runs-on: ubuntu-latest
 
     defaults:
@@ -40,7 +68,6 @@ jobs:
       - name: Terraform Format Check
         id: fmt
         run: terraform fmt -check -recursive
-        continue-on-error: true
 
       - name: Terraform Init
         id: init
@@ -53,7 +80,6 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: terraform plan -no-color -input=false
-        continue-on-error: false
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')

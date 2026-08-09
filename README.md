@@ -1,6 +1,6 @@
 # Production Ready Modular Azure Terraform Infrastructure
 
-This repository contains modularized, production-level Terraform code designed for deploying Azure infrastructure with `for_each` resource loops and remote state management.
+This repository contains modularized, production-level Terraform code designed for deploying Azure infrastructure with `for_each` resource loops, remote state management, **TFLint static analysis**, and **Checkov IaC Security Scanning**.
 
 ## Repository Structure
 
@@ -8,7 +8,7 @@ This repository contains modularized, production-level Terraform code designed f
 .
 ├── .github/
 │   └── workflows/
-│       └── terraform.yml          # GitHub Actions CI/CD pipeline
+│       └── terraform.yml          # GitHub Actions CI/CD pipeline (Format, TFLint, Checkov, Plan, Apply)
 ├── child/
 │   ├── resource_group/            # Resource Group module
 │   ├── Storage_account/           # Storage Account module
@@ -26,9 +26,15 @@ This repository contains modularized, production-level Terraform code designed f
 │   ├── backend.tf                 # Remote Azure Storage backend config
 │   ├── backend.hcl                # Remote backend configuration parameters
 │   └── terraform.tfvars           # Environment variable values
+├── .tflint.hcl                    # TFLint Azure ruleset configuration
 ├── .gitignore
 └── README.md
 ```
+
+## Security & Quality Tools Integrated
+
+1. **Checkov Security Scanner**: Scans Infrastructure as Code for security misconfigurations and compliance vulnerabilities.
+2. **TFLint**: Terraform linter enforcing Azure provider best practices and syntax rules.
 
 ## Remote State Backend
 
@@ -49,9 +55,17 @@ To enable CI/CD deployment via GitHub Actions, add the following secrets under *
 | `AZURE_SUBSCRIPTION_ID` | Azure Subscription ID |
 | `AZURE_TENANT_ID` | Azure Active Directory Tenant ID |
 
-## Local Execution Commands
+## Local Security & Formatting Commands
 
 ```bash
+# Run TFLint
+tflint --init
+tflint -f compact --recursive
+
+# Run Checkov Security Scan
+checkov -d . --framework terraform
+
+# Run Terraform
 cd Root
 terraform init
 terraform plan
