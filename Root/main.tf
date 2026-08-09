@@ -31,14 +31,16 @@ module "rg_nic" {
   depends_on  = [module.rg_subnet]
   source      = "../child/nic"
   rg_nic      = var.rg_nic
+  subnet_ids  = module.rg_subnet.subnet_ids
   environment = local.environment
   tags        = local.common_tags
 }
 
 module "rgtcsvm" {
-  depends_on  = [module.rg_nic]
-  source      = "../child/virtual_machine"
-  rgtcsvm     = var.rgtcsvm
-  environment = local.environment
-  tags        = local.common_tags
+  depends_on            = [module.rg_nic]
+  source                = "../child/virtual_machine"
+  rgtcsvm               = var.rgtcsvm
+  network_interface_ids = module.rg_nic.network_interface_ids
+  environment           = local.environment
+  tags                  = local.common_tags
 }
