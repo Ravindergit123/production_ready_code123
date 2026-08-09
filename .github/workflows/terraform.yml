@@ -1,14 +1,27 @@
-# Production Terraform Security & CI/CD Pipeline Workflow
-name: "Production Terraform Security & CI/CD Pipeline"
+# Multi-Environment (pre & prod) Terraform Security & CI/CD Pipeline Workflow
+name: "Terraform Multi-Env (Pre & Prod) CI/CD Pipeline"
 
 on:
   push:
     branches:
       - main
+      - pre
+      - dev
   pull_request:
     branches:
       - main
+      - pre
+      - dev
   workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Select Environment to Deploy"
+        required: true
+        default: "pre"
+        type: choice
+        options:
+          - pre
+          - prod
 
 permissions:
   contents: read
@@ -42,10 +55,19 @@ jobs:
           output_format: cli
           soft_fail: true
 
-  terraform:
-    name: "Terraform Deploy"
+  deploy:
+    name: "Terraform Deploy (${{ matrix.environment }})"
     needs: security-and-lint
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [pre, prod]
+
+    if: |
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.target_env == matrix.environment)) ||
+      (github.event_name == 'push' && ((matrix.environment == 'prod' && github.ref == 'refs/heads/main') || (matrix.environment == 'pre' && (github.ref == 'refs/heads/pre' || github.ref == 'refs/heads/dev')))) ||
+      (github.event_name == 'pull_request' && ((matrix.environment == 'prod' && github.base_ref == 'main') || (matrix.environment == 'pre' && (github.base_ref == 'pre' || github.base_ref == 'dev'))))
 
     defaults:
       run:
@@ -89,19 +111,32 @@ jobs:
         id: fmt
         run: terraform fmt -check -recursive
 
-      - name: Terraform Init
+      - name: Terraform Init (${{ matrix.environment }})
         id: init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="key=${{ matrix.environment }}.terraform.tfstate" \
+            -reconfigure
 
       - name: Terraform Validate
         id: validate
         run: terraform validate -no-color
 
-      - name: Terraform Plan
+      - name: Terraform Plan (${{ matrix.environment }})
         id: plan
-        run: terraform plan -no-color -input=false
+        run: |
+          if [ -f "${{ matrix.environment }}.tfvars" ]; then
+            terraform plan -var-file="${{ matrix.environment }}.tfvars" -no-color -input=false
+          else
+            terraform plan -no-color -input=false
+          fi
 
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      - name: Terraform Apply (${{ matrix.environment }})
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         id: apply
-        run: terraform apply -auto-approve -input=false
+        run: |
+          if [ -f "${{ matrix.environment }}.tfvars" ]; then
+            terraform apply -var-file="${{ matrix.environment }}.tfvars" -auto-approve -input=false
+          else
+            terraform apply -auto-approve -input=false
+          fi
