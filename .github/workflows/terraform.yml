@@ -61,17 +61,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Check Azure Secrets Configured
-        if: ${{ secrets.AZURE_CLIENT_ID == '' || secrets.AZURE_CLIENT_SECRET == '' }}
-        run: |
-          echo "::error::Azure authentication secrets (AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID, AZURE_TENANT_ID) are not configured in GitHub Repository Settings."
-          echo "Please add your Service Principal credentials under Repository Settings -> Secrets and variables -> Actions."
-          exit 1
-
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+          creds: ${{ secrets.AZURE_CREDENTIALS != '' && secrets.AZURE_CREDENTIALS || format('{"clientId":"{0}","clientSecret":"{1}","subscriptionId":"{2}","tenantId":"{3}"}', secrets.AZURE_CLIENT_ID, secrets.AZURE_CLIENT_SECRET, secrets.AZURE_SUBSCRIPTION_ID, secrets.AZURE_TENANT_ID) }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
