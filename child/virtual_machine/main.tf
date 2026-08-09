@@ -11,33 +11,45 @@ resource "azurerm_linux_virtual_machine" "rgtcsvm" {
 
   custom_data = base64encode(<<-EOF
     #!/bin/bash
-    set -e
+    export DEBIAN_FRONTEND=noninteractive
 
-    # Update and Install Docker, Docker-Compose & Git
-    sudo apt-get update -y
-    sudo apt-get install -y docker.io docker-compose git curl jq
+    # Wait for background dpkg/apt locks to release
+    while fuser /var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1; do
+        sleep 3
+    done
 
-    sudo systemctl enable docker
-    sudo systemctl start docker
+    # Install Nginx, Docker, Git, Curl
+    apt-get update -y
+    apt-get install -y nginx docker.io docker-compose git curl jq
 
-    # Prepare Axion Platform Directory
+    systemctl enable docker || true
+    systemctl start docker || true
+    systemctl enable nginx || true
+    systemctl start nginx || true
+
+    # 1. Deploy StreamFlix / Axion UI Web Application on Nginx Port 80
+    rm -rf /var/www/html/*
+    git clone https://github.com/devopsinsiders/StreamFlix.git /tmp/StreamFlix || true
+    if [ -d "/tmp/StreamFlix" ]; then
+        cp -r /tmp/StreamFlix/* /var/www/html/ || true
+    fi
+    systemctl restart nginx || true
+
+    # 2. Prepare Axion Microservices Platform Suite
     mkdir -p /opt/axion
     cd /opt/axion
 
-    # Clone all 5 Axion Microservices Repositories
     git clone https://github.com/devopsinsiders/axion-database-schema.git || true
     git clone https://github.com/devopsinsiders/axion-ingestion-service.git || true
     git clone https://github.com/devopsinsiders/axion-telemetry-query-service.git || true
     git clone https://github.com/devopsinsiders/axion-ui.git || true
     git clone https://github.com/devopsinsiders/axion-data-simulator.git || true
 
-    # Prepare Database Init Schema
     mkdir -p /opt/axion/db-init
     if [ -d "/opt/axion/axion-database-schema" ]; then
       cp /opt/axion/axion-database-schema/*.sql /opt/axion/db-init/ 2>/dev/null || true
     fi
 
-    # Create Docker Compose Configuration for full Axion Microservices Suite
     cat << 'DOCKERCOMPOSE' > /opt/axion/docker-compose.yml
 version: '3.8'
 
@@ -81,17 +93,6 @@ services:
     depends_on:
       - postgres
 
-  ui:
-    build:
-      context: ./axion-ui
-      dockerfile: Dockerfile
-    container_name: axion-ui
-    restart: always
-    ports:
-      - "80:80"
-    depends_on:
-      - query-service
-
   data-simulator:
     build:
       context: ./axion-data-simulator
@@ -104,7 +105,6 @@ services:
       - ingestion-service
 DOCKERCOMPOSE
 
-    # Fallback Dockerfile generation if missing in cloned source
     for repo in axion-ingestion-service axion-telemetry-query-service axion-data-simulator; do
       if [ -d "/opt/axion/$repo" ] && [ ! -f "/opt/axion/$repo/Dockerfile" ]; then
         cat << 'PYDOCKER' > /opt/axion/$repo/Dockerfile
@@ -118,15 +118,6 @@ PYDOCKER
       fi
     done
 
-    if [ -d "/opt/axion/axion-ui" ] && [ ! -f "/opt/axion/axion-ui/Dockerfile" ]; then
-      cat << 'UIDOCKER' > /opt/axion/axion-ui/Dockerfile
-FROM nginx:alpine
-COPY . /usr/share/nginx/html
-EXPOSE 80
-UIDOCKER
-    fi
-
-    # Launch Axion Container Stack
     cd /opt/axion
     docker-compose up -d --build || true
   EOF
