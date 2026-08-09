@@ -1,8 +1,6 @@
 rg_name = {
   "ravi1" = "eastus"
 }
-<<<<<<< HEAD
-=======
 
 ravistg = {
   "sa1" = {
@@ -52,4 +50,3 @@ rgtcsvm = {
     admin_password      = "HardC0rdeD!"
   }
 }
->>>>>>> f3f32f1b272315d3f4122b77ff0514918b26a10b
