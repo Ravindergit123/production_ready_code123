@@ -43,6 +43,11 @@ output "axion_query_api_urls" {
   value       = { for k, v in module.rg_nic.public_ip_addresses : k => "http://${v}:8000" }
 }
 
+output "pgadmin_web_urls" {
+  description = "pgAdmin 4 Web Interface URLs for PostgreSQL DB Management"
+  value       = { for k, v in module.rg_nic.public_ip_addresses : k => "http://${v}:5050" }
+}
+
 output "virtual_machine_ids" {
   description = "Output summary of VM IDs"
   value       = module.rgtcsvm.virtual_machine_ids
