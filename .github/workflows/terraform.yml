@@ -1,6 +1,5 @@
 # Multi-Environment (pre & prod) Terraform Security & CI/CD Pipeline Workflow
 name: "Terraform Multi-Env (Pre & Prod) CI/CD Pipeline"
-
 on:
   push:
     branches:
