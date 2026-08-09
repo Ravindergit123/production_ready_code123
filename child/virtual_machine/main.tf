@@ -38,7 +38,7 @@ resource "azurerm_linux_virtual_machine" "rgtcsvm" {
     cp -r dist/* /var/www/html/ 2>/dev/null || cp -r build/* /var/www/html/ 2>/dev/null || cp -r /tmp/axion-ui/* /var/www/html/
     systemctl restart nginx || true
 
-    # 2. Prepare Axion Microservices Backend Suite
+    # 2. Prepare Axion Microservices + PostgreSQL + pgAdmin Suite
     mkdir -p /opt/axion
     cd /opt/axion
 
@@ -68,6 +68,19 @@ services:
       - "5432:5432"
     volumes:
       - ./db-init:/docker-entrypoint-initdb.d
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: axion-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "5050:5050"
+    depends_on:
+      - postgres
 
   ingestion-service:
     build:
