@@ -18,31 +18,33 @@ resource "azurerm_linux_virtual_machine" "rgtcsvm" {
         sleep 3
     done
 
-    # Install Nginx, Docker, Git, Curl
+    # Install Node.js 22, Nginx, Docker, Git, Curl
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
     apt-get update -y
-    apt-get install -y nginx docker.io docker-compose git curl jq
+    apt-get install -y nodejs nginx docker.io docker-compose git curl jq
 
     systemctl enable docker || true
     systemctl start docker || true
     systemctl enable nginx || true
     systemctl start nginx || true
 
-    # 1. Deploy StreamFlix / Axion UI Web Application on Nginx Port 80
+    # 1. Build and Deploy Axion Dashboard React Application (axion-ui) on Nginx Port 80
+    mkdir -p /tmp/axion-ui
+    git clone https://github.com/devopsinsiders/axion-ui.git /tmp/axion-ui || true
+    cd /tmp/axion-ui
+    npm install || true
+    npx vite build || npm run build || true
     rm -rf /var/www/html/*
-    git clone https://github.com/devopsinsiders/StreamFlix.git /tmp/StreamFlix || true
-    if [ -d "/tmp/StreamFlix" ]; then
-        cp -r /tmp/StreamFlix/* /var/www/html/ || true
-    fi
+    cp -r dist/* /var/www/html/ 2>/dev/null || cp -r build/* /var/www/html/ 2>/dev/null || cp -r /tmp/axion-ui/* /var/www/html/
     systemctl restart nginx || true
 
-    # 2. Prepare Axion Microservices Platform Suite
+    # 2. Prepare Axion Microservices Backend Suite
     mkdir -p /opt/axion
     cd /opt/axion
 
     git clone https://github.com/devopsinsiders/axion-database-schema.git || true
     git clone https://github.com/devopsinsiders/axion-ingestion-service.git || true
     git clone https://github.com/devopsinsiders/axion-telemetry-query-service.git || true
-    git clone https://github.com/devopsinsiders/axion-ui.git || true
     git clone https://github.com/devopsinsiders/axion-data-simulator.git || true
 
     mkdir -p /opt/axion/db-init
