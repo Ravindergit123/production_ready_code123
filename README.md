@@ -1,5 +1,7 @@
 # Production Ready Modular Azure Terraform Infrastructure
 
+[![Production Terraform Security & CI/CD Pipeline](https://github.com/Ravindergit123/production_ready_code123/actions/workflows/terraform.yml/badge.svg)](https://github.com/Ravindergit123/production_ready_code123/actions/workflows/terraform.yml)
+
 This repository contains modularized, production-level Terraform code designed for deploying Azure infrastructure with `for_each` resource loops, remote state management, **TFLint static analysis**, and **Checkov IaC Security Scanning**.
 
 ## Repository Structure
