@@ -11,6 +11,12 @@ variable "rgtcsvm" {
   }))
 }
 
+variable "network_interface_ids" {
+  description = "Optional map of network interface IDs created by nic module"
+  type        = map(string)
+  default     = {}
+}
+
 variable "environment" {
   description = "Target deployment environment"
   type        = string

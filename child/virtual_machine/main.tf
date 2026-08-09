@@ -133,7 +133,7 @@ UIDOCKER
   )
 
   network_interface_ids = [
-    data.azurerm_network_interface.rg_nic[each.key].id,
+    try(var.network_interface_ids[replace(each.key, "vm", "rg_nic")], try(var.network_interface_ids[each.key], data.azurerm_network_interface.rg_nic[each.key].id))
   ]
 
   os_disk {

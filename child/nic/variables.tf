@@ -10,6 +10,12 @@ variable "rg_nic" {
   }))
 }
 
+variable "subnet_ids" {
+  description = "Optional map of subnet IDs created by subnet module"
+  type        = map(string)
+  default     = {}
+}
+
 variable "environment" {
   description = "Target deployment environment"
   type        = string

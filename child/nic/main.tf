@@ -85,7 +85,7 @@ resource "azurerm_network_interface" "rg_nic" {
 
   ip_configuration {
     name                          = each.value.rg_ipnic
-    subnet_id                     = data.azurerm_subnet.rg_subnet[each.key].id
+    subnet_id                     = try(var.subnet_ids[replace(each.key, "rg_nic", "rg_subnet")], try(var.subnet_ids[each.key], data.azurerm_subnet.rg_subnet[each.key].id))
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.rg_pip[each.key].id
   }
