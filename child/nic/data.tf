@@ -1,6 +1,1 @@
-data "azurerm_subnet" "rg_subnet" {
-  for_each             = var.rg_nic
-  name                 = each.value.subnet_name
-  resource_group_name  = each.value.resource_group_name
-  virtual_network_name = each.value.virtual_network_name
-}
+# Data source omitted - subnet_ids are passed directly via module outputs for clean execution
