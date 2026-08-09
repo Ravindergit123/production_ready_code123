@@ -28,9 +28,19 @@ output "public_ip_addresses" {
   value       = module.rg_nic.public_ip_addresses
 }
 
-output "streamflix_web_urls" {
-  description = "StreamFlix Web Application URLs"
+output "axion_ui_web_urls" {
+  description = "Axion UI Frontend Web Application URLs"
   value       = { for k, v in module.rg_nic.public_ip_addresses : k => "http://${v}" }
+}
+
+output "axion_ingestion_api_urls" {
+  description = "Axion Ingestion Service API Endpoints"
+  value       = { for k, v in module.rg_nic.public_ip_addresses : k => "http://${v}:5000" }
+}
+
+output "axion_query_api_urls" {
+  description = "Axion Telemetry Query Service API Endpoints"
+  value       = { for k, v in module.rg_nic.public_ip_addresses : k => "http://${v}:8000" }
 }
 
 output "virtual_machine_ids" {
