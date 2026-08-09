@@ -61,6 +61,15 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Check Azure Secrets
+        run: |
+          if [ -z "${{ secrets.AZURE_CREDENTIALS }}" ] && [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
+            echo "::error::Secret AZURE_CREDENTIALS is missing in GitHub Repository Secrets!"
+            echo "Please go to Settings -> Secrets and variables -> Actions -> New repository secret."
+            echo "Name: AZURE_CREDENTIALS"
+            exit 1
+          fi
+
       - name: Azure Login
         uses: azure/login@v2
         with:
