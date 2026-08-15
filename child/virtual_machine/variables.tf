@@ -10,9 +10,3 @@ variable "rgtcsvm" {
     size                = optional(string, "Standard_DC1s_v3")
   }))
 }
-
-variable "network_interface_ids" {
-  description = "Map of Network Interface IDs passed from rg_nic module"
-  type        = map(string)
-  default     = {}
-}
