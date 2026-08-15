@@ -1,0 +1,107 @@
+# Production Terraform Security & CI/CD Pipeline Workflow
+name: "Production Terraform Security & CI/CD Pipeline"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  security-and-lint:
+    name: "TFLint & Checkov Security Scan"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: "v0.50.0"
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint -f compact --recursive
+
+      - name: Checkov IaC Security Scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform
+          output_format: cli
+          soft_fail: true
+
+  terraform:
+    name: "Terraform Deploy"
+    needs: security-and-lint
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./Root
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Export Azure ARM Environment Variables for Terraform
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          if [ -n "$AZURE_CREDENTIALS" ]; then
+            echo "ARM_CLIENT_ID=$(echo "$AZURE_CREDENTIALS" | jq -r '.clientId')" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=$(echo "$AZURE_CREDENTIALS" | jq -r '.clientSecret')" >> $GITHUB_ENV
+            echo "ARM_SUBSCRIPTION_ID=$(echo "$AZURE_CREDENTIALS" | jq -r '.subscriptionId')" >> $GITHUB_ENV
+            echo "ARM_TENANT_ID=$(echo "$AZURE_CREDENTIALS" | jq -r '.tenantId')" >> $GITHUB_ENV
+          else
+            echo "ARM_CLIENT_ID=$AZURE_CLIENT_ID" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=$AZURE_CLIENT_SECRET" >> $GITHUB_ENV
+            echo "ARM_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID" >> $GITHUB_ENV
+            echo "ARM_TENANT_ID=$AZURE_TENANT_ID" >> $GITHUB_ENV
+          fi
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -input=false
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        id: apply
+        run: terraform apply -auto-approve -input=false
