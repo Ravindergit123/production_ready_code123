@@ -12,7 +12,7 @@ variable "rgtcsvm" {
 }
 
 variable "network_interface_ids" {
-  description = "Optional map of network interface IDs created by nic module"
+  description = "Map of Network Interface IDs passed from rg_nic module"
   type        = map(string)
   default     = {}
 }
