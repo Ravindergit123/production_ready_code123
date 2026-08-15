@@ -8,15 +8,3 @@ variable "ravistg" {
     account_replication_type = string
   }))
 }
-
-variable "environment" {
-  description = "Target deployment environment"
-  type        = string
-  default     = "prod"
-}
-
-variable "tags" {
-  description = "Additional tags to apply to storage accounts"
-  type        = map(string)
-  default     = {}
-}

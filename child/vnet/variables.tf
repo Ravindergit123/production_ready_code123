@@ -12,15 +12,3 @@ variable "address_space" {
   type        = list(string)
   default     = ["10.0.0.0/16"]
 }
-
-variable "environment" {
-  description = "Target deployment environment"
-  type        = string
-  default     = "prod"
-}
-
-variable "tags" {
-  description = "Additional tags to apply to virtual networks"
-  type        = map(string)
-  default     = {}
-}

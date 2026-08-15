@@ -16,15 +16,3 @@ variable "network_interface_ids" {
   type        = map(string)
   default     = {}
 }
-
-variable "environment" {
-  description = "Target deployment environment"
-  type        = string
-  default     = "prod"
-}
-
-variable "tags" {
-  description = "Additional tags to apply to VMs"
-  type        = map(string)
-  default     = {}
-}

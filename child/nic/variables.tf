@@ -15,15 +15,3 @@ variable "subnet_ids" {
   type        = map(string)
   default     = {}
 }
-
-variable "environment" {
-  description = "Target deployment environment"
-  type        = string
-  default     = "prod"
-}
-
-variable "tags" {
-  description = "Additional tags to apply to NICs"
-  type        = map(string)
-  default     = {}
-}
