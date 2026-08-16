@@ -16,9 +16,10 @@ on:
       target_env:
         description: "Select Environment to Deploy"
         required: true
-        default: "pre"
+        default: "all"
         type: choice
         options:
+          - all
           - pre
           
 
@@ -108,9 +109,9 @@ jobs:
       - name: Terraform Init (${{ matrix.environment }})
         id: init
         if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target_env == matrix.environment) ||
-          (github.event_name == 'push' && ((matrix.environment == 'prod' && github.ref == 'refs/heads/main') || (matrix.environment == 'pre' && (github.ref == 'refs/heads/pre' || github.ref == 'refs/heads/dev')))) ||
-          (github.event_name == 'pull_request' && ((matrix.environment == 'prod' && github.base_ref == 'main') || (matrix.environment == 'pre' && (github.base_ref == 'pre' || github.base_ref == 'dev'))))
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.target_env == matrix.environment || github.event.inputs.target_env == 'all')) ||
+          (github.event_name == 'push') ||
+          (github.event_name == 'pull_request')
         run: |
           terraform init \
             -backend-config="key=${{ matrix.environment }}.terraform.tfstate" \
@@ -124,9 +125,9 @@ jobs:
       - name: Terraform Plan (${{ matrix.environment }})
         id: plan
         if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target_env == matrix.environment) ||
-          (github.event_name == 'push' && ((matrix.environment == 'prod' && github.ref == 'refs/heads/main') || (matrix.environment == 'pre' && (github.ref == 'refs/heads/pre' || github.ref == 'refs/heads/dev')))) ||
-          (github.event_name == 'pull_request' && ((matrix.environment == 'prod' && github.base_ref == 'main') || (matrix.environment == 'pre' && (github.base_ref == 'pre' || github.base_ref == 'dev'))))
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.target_env == matrix.environment || github.event.inputs.target_env == 'all')) ||
+          (github.event_name == 'push') ||
+          (github.event_name == 'pull_request')
         run: |
           if [ -f "${{ matrix.environment }}.tfvars" ]; then
             terraform plan -var-file="${{ matrix.environment }}.tfvars" -no-color -input=false
@@ -135,7 +136,9 @@ jobs:
           fi
 
       - name: Terraform Apply (${{ matrix.environment }})
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && ((github.event.inputs.target_env == matrix.environment) || (github.event_name == 'push' && ((matrix.environment == 'prod' && github.ref == 'refs/heads/main') || (matrix.environment == 'pre' && (github.ref == 'refs/heads/pre' || github.ref == 'refs/heads/dev')))))
+        if: |
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+          ((github.event_name == 'workflow_dispatch' && (github.event.inputs.target_env == matrix.environment || github.event.inputs.target_env == 'all')) || github.event_name == 'push')
         id: apply
         run: |
           if [ -f "${{ matrix.environment }}.tfvars" ]; then
