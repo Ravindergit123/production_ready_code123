@@ -1,16 +1,15 @@
 terraform {
-  backend "azurerm" {
-    resource_group_name  = "tfstate-rg"
-    storage_account_name = "ravitfstate2026"
-    container_name       = "tfstate"
-    key                  = "prod.terraform.tfstate"
+  required_version = ">= 1.0"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
   }
 }
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "tfstate-rg"
-    storage_account_name = "ravitfstate2026"
-    container_name       = "tfstate"
-    key                  = "prod.terraform.tfstate"
-  }
+
+provider "azurerm" {
+  features {}
+
+  subscription_id = "b4ae5a45-b36d-445c-99a5-c39ef04e44dc"
 }
