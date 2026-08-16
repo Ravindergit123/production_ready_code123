@@ -118,6 +118,7 @@ jobs:
 
       - name: Terraform Validate
         id: validate
+        if: steps.init.outcome == 'success'
         run: terraform validate -no-color
 
       - name: Terraform Plan (${{ matrix.environment }})
